@@ -1,0 +1,77 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+    prompt          DB 10, 13, 'ENTER DIGIT: $'
+    p2              DB 10, 13, 'ENTER SECOND DIGIT: $'
+    p3              DB 10, 13, 'RESULT IS: $'
+    error_message    DB 10, 13, 'INVALID INPUT. TRY AGAIN.$'
+
+.CODE
+    ORG 0x100  ; Required for .com files to tell the assembler where code starts
+
+_start:
+    ; Setup data segment
+    MOV AX, @DATA      ; Load data segment into AX
+    MOV DS, AX         ; Copy data segment into DS
+
+    ; Prompt for the first digit
+    CALL prompt_user
+    CALL read_input
+
+    MOV BL, AL  ; Store the first digit in BL
+
+    ; Prompt for the second digit
+    CALL prompt_user
+    CALL read_input          ; Read second digit
+
+    ; Add the two digits
+    ADD AL, BL              ; Add first and second digit
+    ADD AL, 30h             ; Convert result back to ASCII
+
+    JMP print_result
+
+prompt_user:
+    ; Prompt user to enter a digit
+    MOV DX, OFFSET prompt   ; Load the address of prompt into DX
+    MOV AH, 09h             ; Function to print string
+    INT 21h                 ; Call DOS interrupt
+    RET                      ; Return to point of call
+
+read_input:
+    ; Read first character
+    MOV AH, 01h             ; Function to read a character
+    INT 21h                 ; Call DOS interrupt
+
+    CMP AL, '9'
+    JA error                 ; If character input has a value greater than '9'
+    
+    CMP AL, '0'
+    JB error                 ; If character input has a value less than '0'
+
+    SUB AL, 30h              ; Convert ASCII to number
+    RET
+
+error:
+    MOV DX, OFFSET error_message
+    MOV AH, 09h             ; Function to print string
+    INT 21h                 ; Call DOS interrupt
+    
+    ; Instead of jumping to prompt_user, go back to read_input
+    JMP read_input           ; Go back to read input again
+
+print_result:
+    ; Print the result message
+    MOV DX, OFFSET p3       ; Load the address of p3 into DX
+    MOV AH, 09h             ; Function to print string
+    INT 21h                 ; Call DOS interrupt
+
+    ; Output the result character
+    MOV DL, AL              ; Load result character into DL
+    MOV AH, 02h             ; Function to print character
+    INT 21h                 ; Call DOS interrupt
+
+    ; Exit the program
+exit_program:
+    MOV AH, 4Ch             ; Function to exit program
+    INT 21h                 ; Call DOS interrupt
