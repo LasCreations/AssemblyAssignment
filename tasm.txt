@@ -8,28 +8,27 @@
     error_message    DB 10, 13, 'INVALID INPUT. TRY AGAIN.$'
 
 .CODE
-    ORG 0x100  ; Required for .com files to tell the assembler where code starts
-
 _start:
     ; Setup data segment
-    MOV AX, @DATA      ; Load data segment into AX
+    MOV AX, _DATA      ; Load data segment into AX
     MOV DS, AX         ; Copy data segment into DS
 
     ; Prompt for the first digit
     CALL prompt_user
     CALL read_input
 
-    MOV BL, AL  ; Store the first digit in BL
+    MOV BL, AL         ; Store the first digit in BL
 
     ; Prompt for the second digit
     CALL prompt_user
-    CALL read_input          ; Read second digit
+    CALL read_input     ; Read second digit
 
     ; Add the two digits
-    ADD AL, BL              ; Add first and second digit
-    ADD AL, 30h             ; Convert result back to ASCII
+    ADD AL, BL         ; Add first and second digit
+    ADD AL, 30h        ; Convert result back to ASCII
 
-    JMP print_result
+    CALL print_result   ; Call print_result
+    JMP exit_program    ; Exit the program
 
 prompt_user:
     ; Prompt user to enter a digit
@@ -39,15 +38,15 @@ prompt_user:
     RET                      ; Return to point of call
 
 read_input:
-    ; Read first character
+    ; Read character
     MOV AH, 01h             ; Function to read a character
     INT 21h                 ; Call DOS interrupt
 
     CMP AL, '9'
-    JA error                 ; If character input has a value greater than '9'
+    JA error                 ; If character input is greater than '9'
     
     CMP AL, '0'
-    JB error                 ; If character input has a value less than '0'
+    JB error                 ; If character input is less than '0'
 
     SUB AL, 30h              ; Convert ASCII to number
     RET
@@ -57,7 +56,7 @@ error:
     MOV AH, 09h             ; Function to print string
     INT 21h                 ; Call DOS interrupt
     
-    ; Instead of jumping to prompt_user, go back to read_input
+    ; Return to read_input to try again
     JMP read_input           ; Go back to read input again
 
 print_result:
@@ -71,7 +70,9 @@ print_result:
     MOV AH, 02h             ; Function to print character
     INT 21h                 ; Call DOS interrupt
 
-    ; Exit the program
+    RET                      ; Return to point of call
+
 exit_program:
     MOV AH, 4Ch             ; Function to exit program
     INT 21h                 ; Call DOS interrupt
+END _start
