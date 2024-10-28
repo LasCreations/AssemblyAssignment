@@ -2,6 +2,8 @@
 ;.MODEL SMALL
 ;.STACK 100H
 
+;Test
+
 section .text
     org 0x100  ; Required for .com files to tell the assembler where code starts
 
