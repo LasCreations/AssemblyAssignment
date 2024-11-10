@@ -64,27 +64,21 @@ display:
     jmp double_digit_result ; else call
 
 double_digit_result:
-    ; Copy result in AL to a temporary register (so AL can be safely used for division)
-    mov bl, al            ; Move the result to BL
+    mov dx, result
+    mov ah, 09h
+    int 21h
 
-    ; Prepare for division by 10
-    mov ax, 0             ; Clear AX
-    mov al, bl            ; Load the result back into AL
-    mov cl, 10            ; Set divisor to 10
-    div cl                ; Divide AL by 10 -> quotient in AL (tens), remainder in AH (units)
+    mov dl, al
+    div dl, 10  ; Divide the result by 10 to get the tens digit
+    add dl, 30h ; Convert the tens digit to ASCII
+    mov ah, 02h
+    int 21h
 
-    ; Convert and print tens digit
-    add al, 30h           ; Convert quotient (tens) to ASCII
-    mov dl, al            ; Move ASCII tens digit to DL for printing
-    call print_char       ; Print tens digit
-
-    ; Convert and print units digit
-    mov al, ah            ; Move remainder (units) to AL
-    add al, 30h           ; Convert to ASCII
-    mov dl, al            ; Move ASCII units digit to DL for printing
-    call print_char       ; Print units digit
-
-    jmp exit_program      ; Go to program exit
+    mov dl, ah  ; The remainder is the units digit
+    add dl, 30h ; Convert the units digit to ASCII
+    mov ah, 02h
+    int 21h
+    ret
 
 
 addition:
