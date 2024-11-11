@@ -1,61 +1,41 @@
+; These are not needed 
+;.MODEL SMALL
+;.STACK 100H
+
+;Test
+
 section .text
     org 0x100  ; Required for .com files to tell the assembler where code starts
 
+_start:
+    ; Setup data segment
+    mov ax, cs      ; Load code segment into AX
+    mov ds, ax      ; Copy code segment into data segment
 
-mov ax, cs      ; Load code segment into AX
-mov ds, ax      ; Copy code segment into data segment
-jmp menu
+    ;   Call Menu Option 
+    call menu
+    call readMenuOption
 
-menu:
-    call new_line
-
-    mov dx, display_menu
-    mov ah, 09h      
-    int 21h
-
-    call new_line
-
-    mov ah, 01h      
-    int 21h        
-    
-    mov cl, al  
-
-    cmp cl, '4'
-    ja menu         
-    
-    cmp cl, '1'
-    jb menu         
+    mov cl, al  ; Move option into CL
 
     cmp cl, '4'
     je exit_program
 
-    jmp accept_input
-
-new_line:
-    mov ah, 02h
-    mov dl, 13
-    int 21h
-    mov dl, 10
-    int 21h 
-    ret
-
-prompt_user:
-    mov dx, prompt   
-    mov ah, 09h      
-    int 21h          
-    ret 
-
-accept_input:
+    ; Prompt and accept first digit
     call prompt_user
     call read_input
 
     mov bl, al  
-        
+
+    ; Prompt and accept second digit
     call prompt_user
-    call read_input
+    call read_input          
 
     cmp cl, '1'
-    je addition
+    je add_digits
+
+    cmp cl, '2'
+    je sub_digits
 
 
 display:
@@ -63,29 +43,83 @@ display:
     jbe single_digit_result 
     jmp double_digit_result ; else call
 
-double_digit_result:
-    mov dx, result
-    mov ah, 09h
-    int 21h
-
-    mov dl, al
-    div dl, 10  ; Divide the result by 10 to get the tens digit
-    add dl, 30h ; Convert the tens digit to ASCII
-    mov ah, 02h
-    int 21h
-
-    mov dl, ah  ; The remainder is the units digit
-    add dl, 30h ; Convert the units digit to ASCII
-    mov ah, 02h
-    int 21h
+readMenuOption:
+    mov ah, 01h      ; Function to read a character
+    int 21h          ; Call DOS interrupt
     ret
 
+menu:
+    mov dx, menuopt
+    mov ah, 09h      
+    int 21h 
 
-addition:
+    call newLine
+
+    mov dx, _add
+    mov ah, 09h      
+    int 21h 
+
+    call newLine
+
+    mov dx, _sub
+    mov ah, 09h      
+    int 21h 
+
+    call newLine
+
+    mov dx, _mul
+    mov ah, 09h      
+    int 21h 
+
+    call newLine
+
+    mov dx, exit
+    mov ah, 09h      
+    int 21h 
+
+    call newLine
+
+    ret
+
+add_digits:
     add al, bl
-    jmp display    
+    call display
+    
+sub_digits:
+    mov dx, _test
+    mov ah, 09h      
+    int 21h          
+    jmp exit_program  
 
-single_digit_result: 
+; Prompt user to enter a digit
+prompt_user:
+    mov dx, prompt   
+    mov ah, 09h      
+    int 21h          
+    ret               
+
+read_input:
+
+    ; Read first character
+    mov ah, 01h      ; Function to read a character
+    int 21h          ; Call DOS interrupt
+
+    cmp al, '9'
+    JA error          ; If character input has a value greater than '9'
+    
+    cmp al, '0'
+    JB error          ; If character input has a value less than '0'
+
+    sub al, 30h       ; Convert ASCII to number
+    ret
+
+error:
+    mov dx, error_message
+    mov ah, 09h      ;
+    int 21h          
+    jmp read_input    
+
+single_digit_result:
     add al, 30h             ; Convert result back to ASCII
 
     ; Print the result message
@@ -98,46 +132,58 @@ single_digit_result:
 
     call exit_program
 
-print_char:
-    mov dl, al
+
+newLine:
+    ;New Line
     mov ah, 02h
+    mov dl, 13
     int 21h
-    ret   
-
-read_input:
-    mov ah, 01h      
-    int 21h          
-
-    cmp al, '9'
-    JA error          
-    
-    cmp al, '0'
-    JB error          
-
-    sub al, 30h  
+    mov dl, 10
+    int 21h 
     ret
 
 
+double_digit_result :
 
+    call newLine
 
-error:
-    mov dx, error_message
-    mov ah, 09h      
-    int 21h 
+    ; Assume the result is in AL
+    mov ah, 0          ; Clear AH for division
+    mov bl, 10         ; Set divisor as 10
+    div bl             ; AL now holds the quotient (tens), AH holds remainder (ones)
 
-    call new_line
-    call prompt_user
-    jmp read_input  
+    ; Convert and display the tens digit
+    add al, '0'        ; Convert quotient (tens) to ASCII
+    mov dl, al         ; Move ASCII tens digit to DL
+    call print_char    ; Print tens digit
 
+    ; Convert and display the ones digit
+    mov al, ah         ; Move remainder (ones) to AL
+    add al, '0'        ; Convert to ASCII
+    mov dl, al         ; Move ASCII ones digit to DL
+    call print_char    ; Print ones digit
+
+    call exit_program
+
+print_char:
+    ; Output a single character in AL
+    mov dl, al       ; Load result character into DL
+    mov ah, 02h      ; Function to print character
+    int 21h          ; Call DOS interrupt
+    ret    
+
+    ; Exit the program
 exit_program:
-    mov ah, 4Ch      
-    int 21h    
+    mov ah, 4Ch      ; Function to exit program
+    int 21h          ; Call DOS interrupt
 
 section .data
-    result           db 10, 13, 'RESULT IS: $'
-    display_menu     db 10, 13, '1.ADDITION  2.SUBTRACTION 3.MULTIPLICATION 4.EXIT  $'
-    error_message    db 10, 13, 'INVALID INPUT. TRY AGAIN.$'
     prompt           db 10, 13, 'ENTER DIGIT: $'
-    a db 0
-    b db 0
-    c db 0
+    result           db 10, 13, 'RESULT IS: $'
+    menuopt          db 10, 13, 'CHOOSE ARITHMETIC OPTION: $'
+    _add             db 10, 13, '1. ADDITION $'
+    _sub             db 10, 13, '2. SUBTRACTION $'
+    _mul             db 10, 13, '3. MULTIPLICATION $'
+    exit             db 10, 13, '4. EXIT $'
+    error_message    db 10, 13, 'INVALID INPUT. TRY AGAIN.$'
+    _test             db 10, 13, 'test $'
