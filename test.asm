@@ -287,4 +287,4 @@ section .data
         msg5    db      0dh,0ah,"Result : $" 
         msg7    db      0dh,0ah,"Invalid Digit Input Please Try Again" , 0Dh,0Ah," $" 
     
-        msg6    db      0dh,0ah ,'Thank You for using the calculator! Submitted by Lascelle, Benjamin, Fredrica ,Dawayne ', 0Dh,0Ah, '$'
+        msg6    db      0dh,0ah ,'Thank You for using the calculator! Submitted by Lascelle, Benjamin, Fredrica ,Dawayne. & Keller ', 0Dh,0Ah, '$'
